@@ -1,0 +1,15 @@
+[Unit]
+Description=Impulse Voice local speech-to-text daemon
+After=pipewire.service
+Wants=pipewire.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/impulse-voice-daemon
+Restart=on-failure
+RestartSec=2
+Environment=RUST_LOG=impulse_voice_daemon=info
+
+[Install]
+WantedBy=default.target
+

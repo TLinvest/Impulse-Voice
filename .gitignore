@@ -1,0 +1,7 @@
+/target/
+*.wav
+*.onnx
+*.nemo
+/models/
+.env
+
