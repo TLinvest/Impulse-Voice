@@ -10,8 +10,8 @@ use serde_json::Value;
 const PASTE_DELAY: Duration = Duration::from_millis(80);
 const RESTORE_DELAY: Duration = Duration::from_millis(350);
 
-#[derive(Clone, Copy)]
-enum PasteShortcut {
+#[derive(Clone, Copy, Debug)]
+enum InsertionMode {
     Standard,
     Terminal,
 }
@@ -20,7 +20,9 @@ pub fn insert_text(text: &str) -> Result<()> {
     let previous = read_text_clipboard();
     write_text_clipboard(text)?;
     thread::sleep(PASTE_DELAY);
-    send_paste_shortcut(detect_paste_shortcut())?;
+    let mode = detect_insertion_mode();
+    tracing::info!(?mode, "inserting transcript");
+    insert_with_keyboard(text, mode)?;
     thread::sleep(RESTORE_DELAY);
 
     match previous {
@@ -58,7 +60,7 @@ fn write_text_clipboard(text: &str) -> Result<()> {
     Ok(())
 }
 
-fn detect_paste_shortcut() -> PasteShortcut {
+fn detect_insertion_mode() -> InsertionMode {
     let active_window = Command::new("hyprctl")
         .args(["activewindow", "-j"])
         .output()
@@ -74,9 +76,9 @@ fn detect_paste_shortcut() -> PasteShortcut {
     });
 
     if is_terminal {
-        PasteShortcut::Terminal
+        InsertionMode::Terminal
     } else {
-        PasteShortcut::Standard
+        InsertionMode::Standard
     }
 }
 
@@ -111,30 +113,31 @@ fn is_terminal_class(class: &str) -> bool {
     .contains(&class.as_str())
 }
 
-fn send_paste_shortcut(shortcut: PasteShortcut) -> Result<()> {
+fn insert_with_keyboard(text: &str, mode: InsertionMode) -> Result<()> {
     if command_exists("wtype") {
         let mut command = Command::new("wtype");
-        command.args(["-M", "ctrl"]);
-        if matches!(shortcut, PasteShortcut::Terminal) {
-            command.args(["-M", "shift"]);
+        match mode {
+            // Direct typing avoids synthetic Ctrl+Shift modifiers leaking into
+            // global Hyprland shortcuts while a terminal TUI has focus.
+            InsertionMode::Terminal => {
+                command.args(["--", text]);
+            }
+            InsertionMode::Standard => {
+                command.args(["-M", "ctrl", "-k", "v", "-m", "ctrl"]);
+            }
         }
-        command.args(["-k", "v"]);
-        if matches!(shortcut, PasteShortcut::Terminal) {
-            command.args(["-m", "shift"]);
-        }
-        let output = command
-            .args(["-m", "ctrl"])
-            .output()
-            .context("échec de wtype")?;
+        let output = command.output().context("échec de wtype")?;
         if output.status.success() {
             return Ok(());
         }
     }
 
     if command_exists("ydotool") {
-        let keys: &[&str] = match shortcut {
-            PasteShortcut::Standard => &["key", "29:1", "47:1", "47:0", "29:0"],
-            PasteShortcut::Terminal => &["key", "29:1", "42:1", "47:1", "47:0", "42:0", "29:0"],
+        let keys: &[&str] = match mode {
+            InsertionMode::Standard => &["key", "29:1", "47:1", "47:0", "29:0"],
+            // Shift+Insert is the conventional terminal paste fallback and
+            // avoids the Ctrl+Shift combination bound to the task manager.
+            InsertionMode::Terminal => &["key", "42:1", "110:1", "110:0", "42:0"],
         };
         let output = Command::new("ydotool")
             .args(keys)

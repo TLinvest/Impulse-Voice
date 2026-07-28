@@ -11,8 +11,8 @@ Parakeet V3 sur le CPU puis inséré dans l'application active.
 - suppression légère du silence avant et après la parole
 - Parakeet TDT 0.6B v3 INT8 local via ONNX Runtime
 - modèle conservé en mémoire après la première dictée
-- insertion Wayland par `wl-copy` et `wtype`, avec `Ctrl+Shift+V` automatique
-  dans les terminaux et restauration du presse-papiers
+- insertion Wayland par `wl-copy` et `wtype`, avec frappe directe dans les
+  terminaux, collage contextuel et restauration du presse-papiers
 - capsule Quickshell non focalisable
 - daemon systemd utilisateur et protocole JSON sur socket Unix
 - diagnostic matériel et logiciel intégré
