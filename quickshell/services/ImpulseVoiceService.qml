@@ -9,7 +9,9 @@ Singleton {
     readonly property string socketPath: `${Quickshell.env("XDG_RUNTIME_DIR")}/impulse-voice.sock`
     readonly property bool connected: voiceSocket.connected
     property string state: "idle"
+    property bool modelReady: false
     property string errorMessage: ""
+    property string lastTranscript: ""
     property int nextRequestId: 1
 
     signal transcriptReady(string text)
@@ -55,8 +57,12 @@ Singleton {
         if (payload.state)
             root.state = payload.state;
 
+        if (payload.model_ready !== undefined)
+            root.modelReady = payload.model_ready;
+
         if (payload.type === "transcript") {
-            root.transcriptReady(payload.text ?? "");
+            root.lastTranscript = payload.text ?? "";
+            root.transcriptReady(root.lastTranscript);
         } else if (payload.type === "error") {
             root.errorMessage = payload.message ?? "Erreur inconnue";
             errorTimeout.restart();
@@ -71,6 +77,11 @@ Singleton {
         onError: (error) => {
             root.state = "idle";
             reconnectTimer.restart();
+        }
+        onConnectedChanged: {
+            if (connected)
+                root.send("status");
+
         }
 
         parser: SplitParser {

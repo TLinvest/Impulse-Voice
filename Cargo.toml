@@ -1,6 +1,6 @@
 [package]
 name = "impulse-voice-daemon"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "Local speech-to-text daemon for the Impulse Voice Quickshell component"
@@ -8,11 +8,14 @@ description = "Local speech-to-text daemon for the Impulse Voice Quickshell comp
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive", "env"] }
+cpal = "0.16"
+rubato = "0.16.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.43", features = ["io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+transcribe-rs = { version = "0.3.8", features = ["onnx"] }
 
 [profile.release]
 lto = true

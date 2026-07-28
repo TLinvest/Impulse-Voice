@@ -1,74 +1,67 @@
 # Impulse Voice
 
-Local, private speech-to-text for CachyOS, Hyprland, Quickshell, and Illogical
-Impulse.
+Dictée locale et privée pour CachyOS, Hyprland, Quickshell et Illogical
+Impulse. Maintiens un raccourci, parle, relâche : le texte est transcrit par
+Parakeet V3 sur le CPU puis inséré dans l'application active.
 
-Impulse Voice is designed as a lightweight alternative to cloud dictation
-tools: hold a shortcut, speak, release, and insert the transcript into the
-currently focused application. Audio stays on the machine.
+## Fonctionnalités
 
-## Current status
+- capture du microphone par CPAL via la pile PipeWire/ALSA
+- conversion multicanal vers mono et resampling 16 kHz avec rubato
+- suppression légère du silence avant et après la parole
+- Parakeet TDT 0.6B v3 INT8 local via ONNX Runtime
+- modèle conservé en mémoire après la première dictée
+- insertion Wayland par `wl-copy` et `wtype`, avec restauration du presse-papiers
+- capsule Quickshell non focalisable
+- daemon systemd utilisateur et protocole JSON sur socket Unix
+- diagnostic matériel et logiciel intégré
 
-`0.1.0` is the project foundation:
+L'audio ne quitte jamais la machine.
 
-- executable Rust daemon
-- newline-delimited JSON protocol over a Unix socket
-- Quickshell service and non-focusable capsule
-- Quickshell IPC commands and global shortcuts
-- systemd user service
-
-The audio capture and Parakeet inference pipeline are intentionally the next
-milestone. The current daemon returns `engine_not_connected` after a test
-recording cycle.
-
-## Planned speech pipeline
-
-- PipeWire-compatible capture through `cpal`
-- mono 16 kHz resampling
-- Silero VAD
-- Parakeet TDT 0.6B v3 INT8 through `transcribe-rs` and ONNX Runtime
-- local dictionary and text normalization
-- insertion through `wl-copy` and `wtype`, with clipboard restoration
-
-See [architecture](docs/architecture.md) and [IPC protocol](docs/protocol.md).
-
-## Development
+## Prérequis CachyOS/Arch
 
 ```bash
-cargo run
+sudo pacman -S --needed \
+  base-devel alsa-lib pipewire pipewire-alsa wireplumber \
+  wl-clipboard wtype curl
 ```
 
-In another terminal:
+Rust doit être disponible via `rustup` ou les paquets Arch.
+
+## Installation
+
+Depuis la racine du dépôt :
 
 ```bash
-printf '{"id":1,"command":"start"}\n' | socat - UNIX-CONNECT:"$XDG_RUNTIME_DIR/impulse-voice.sock"
+./scripts/install.sh
 ```
 
-Build an optimized binary:
+Le script :
+
+1. télécharge Parakeet V3 INT8 et vérifie son SHA-256 ;
+2. compile le daemon en mode release ;
+3. installe le binaire et le service systemd utilisateur ;
+4. installe les deux fichiers QML ;
+5. ajoute idempotemment le loader Illogical Impulse ;
+6. ajoute les raccourcis Hyprland ;
+7. démarre le service et exécute le diagnostic.
+
+Options :
 
 ```bash
-cargo build --release
-install -Dm755 target/release/impulse-voice-daemon \
-  "$HOME/.local/bin/impulse-voice-daemon"
+./scripts/install.sh --no-model
+./scripts/install.sh --no-quickshell
+./scripts/install.sh --no-start
 ```
 
-## Quickshell integration
+## Utilisation
 
-The repository mirrors the intended Illogical Impulse destinations:
+- maintenir `Super+Alt+V` : enregistrer
+- relâcher `Super+Alt+V` : transcrire et coller
+- `Super+Alt+Shift+V` : mode démarrer/arrêter
+- `Super+Alt+Échap` : annuler
 
-```text
-quickshell/services/ImpulseVoiceService.qml
-quickshell/modules/ii/impulseVoice/ImpulseVoice.qml
-```
-
-After linking or copying these files:
-
-1. Import `qs.modules.ii.impulseVoice` in
-   `panelFamilies/IllogicalImpulseFamily.qml`.
-2. Add `PanelLoader { component: ImpulseVoice {} }`.
-3. Restart Quickshell.
-
-Available shell commands:
+Commandes Quickshell :
 
 ```bash
 qs -c ii ipc call impulseVoice start
@@ -77,19 +70,85 @@ qs -c ii ipc call impulseVoice toggle
 qs -c ii ipc call impulseVoice cancel
 ```
 
-## Service
+## Diagnostic
 
 ```bash
-install -Dm644 systemd/impulse-voice.service \
-  "$HOME/.config/systemd/user/impulse-voice.service"
-systemctl --user daemon-reload
-systemctl --user enable --now impulse-voice.service
+impulse-voice-daemon --doctor
+impulse-voice-daemon --list-input-devices
+impulse-voice-daemon --warmup
+systemctl --user status impulse-voice.service
+journalctl --user -u impulse-voice.service -f
 ```
 
-## Credits and license
+Le diagnostic vérifie le microphone par défaut, le modèle et les outils
+d'insertion Wayland.
 
-The product direction is inspired by
-[Handy](https://github.com/cjpais/Handy). Handy is MIT licensed; its name, logo,
-and brand assets are not used by this project.
+Un fichier WAV mono 16 kHz peut tester l'inférence sans ouvrir le microphone :
 
-Impulse Voice is licensed under the [MIT License](LICENSE).
+```bash
+impulse-voice-daemon --transcribe-wav /chemin/vers/test.wav
+```
+
+## Test sans collage
+
+Arrête d'abord le service puis lance :
+
+```bash
+systemctl --user stop impulse-voice.service
+impulse-voice-daemon --no-paste
+```
+
+Dans un autre terminal :
+
+```bash
+printf '{"id":1,"command":"start"}\n' |
+  ncat -U "$XDG_RUNTIME_DIR/impulse-voice.sock"
+
+# Parler, puis :
+printf '{"id":2,"command":"stop","paste":false}\n' |
+  ncat -U "$XDG_RUNTIME_DIR/impulse-voice.sock"
+```
+
+Pour un client persistant, garder une seule connexion `ncat -U` ouverte et
+envoyer successivement les deux lignes JSON.
+
+## Emplacements
+
+```text
+~/.local/bin/impulse-voice-daemon
+~/.local/share/impulse-voice/models/parakeet-tdt-0.6b-v3-int8/
+~/.config/systemd/user/impulse-voice.service
+~/.config/quickshell/ii/services/ImpulseVoiceService.qml
+~/.config/quickshell/ii/modules/ii/impulseVoice/ImpulseVoice.qml
+```
+
+Le modèle peut être déplacé avec `IMPULSE_VOICE_MODEL=/chemin/du/modèle`.
+Le microphone peut être sélectionné avec
+`IMPULSE_VOICE_INPUT_DEVICE="nom CPAL exact"`.
+
+## Développement
+
+```bash
+cargo fmt --check
+cargo test
+cargo run -- --doctor
+```
+
+Voir [l'architecture](docs/architecture.md) et le
+[protocole IPC](docs/protocol.md).
+
+## Désinstallation
+
+```bash
+./scripts/uninstall.sh
+```
+
+Le modèle est volontairement conservé.
+
+## Crédits et licence
+
+La direction produit et certaines décisions d'architecture sont inspirées de
+[Handy](https://github.com/cjpais/Handy), sous licence MIT. Le nom, le logo et
+les éléments de marque de Handy ne sont pas utilisés.
+
+Impulse Voice est distribué sous [licence MIT](LICENSE).

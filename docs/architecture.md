@@ -1,49 +1,60 @@
 # Architecture
 
-## Target pipeline
-
 ```text
 Hyprland shortcut
        |
        v
 Quickshell capsule <---- NDJSON / Unix socket ----> Rust daemon
                                                     |
-                                      PipeWire/cpal capture
+                                           CPAL microphone
                                                     |
-                                      16 kHz mono resampling
+                                     downmix mono + rubato 16 kHz
                                                     |
-                                           Silero VAD
+                                        energy-based silence trim
                                                     |
                                    Parakeet TDT 0.6B v3 INT8
                                                     |
-                                  dictionary and text normalization
+                                        transcript normalization
                                                     |
                                       wl-copy + wtype/ydotool
 ```
 
-## Responsibilities
+## Cycle de dictée
 
-The Quickshell layer owns presentation, shortcuts, state feedback, and settings.
-It must never request keyboard focus while recording, otherwise the transcript
-could be pasted into the overlay instead of the previously focused application.
+Le microphone est ouvert uniquement lors de `start`. `stop` détruit le flux
+CPAL, récupère le tampon, le resample puis envoie le PCM à Parakeet. Cette
+stratégie évite de laisser l'indicateur microphone actif au repos.
 
-The Rust daemon owns audio capture, VAD, model lifetime, inference, transcript
-history, and text insertion. Keeping Parakeet loaded in a user service avoids a
-model load on every dictation.
+Parakeet est chargé paresseusement lors de la première transcription et reste
+en mémoire dans le service. Les transcriptions suivantes évitent donc le coût
+de chargement du modèle.
 
-## Planned backend crates
+L'inférence et l'insertion sont exécutées hors du runtime asynchrone. Le socket
+reste réactif pendant les opérations CPU bloquantes.
 
-- `cpal` for PipeWire-compatible audio capture
-- `rubato` for resampling
-- `vad-rs` for Silero voice activity detection
-- `transcribe-rs` with its ONNX feature for Parakeet V3 INT8
+## Interface
 
-The current `0.1.0` repository contains the control plane and UI integration.
-Audio capture and inference are the next implementation milestone.
+La fenêtre Quickshell utilise la couche overlay mais reste non focalisable avec
+une zone d'exclusion nulle. L'application qui possédait le focus avant la
+dictée le conserve, ce qui permet à `wtype` d'y envoyer `Ctrl+V`.
 
-## Inspiration
+## Modèle
 
-The workflow and separation of concerns are inspired by
-[Handy](https://github.com/cjpais/Handy), which is MIT licensed. Impulse Voice
-uses its own name and visual identity. No Handy brand assets are used.
+Le dossier Parakeet doit contenir :
+
+```text
+parakeet-tdt-0.6b-v3-int8/
+├── encoder-model.int8.onnx
+├── decoder_joint-model.int8.onnx
+├── nemo128.onnx
+└── vocab.txt
+```
+
+L'installateur utilise l'archive publiée par Handy et vérifie le SHA-256 avant
+extraction. Le code d'inférence dépend directement de `transcribe-rs`.
+
+## Limites actuelles
+
+Le filtre de silence repose sur l'énergie RMS, adapté au push-to-talk. Silero
+VAD pourra le remplacer si un mode mains libres ou streaming est ajouté.
 

@@ -1,7 +1,7 @@
 [Unit]
 Description=Impulse Voice local speech-to-text daemon
-After=pipewire.service
-Wants=pipewire.service
+After=pipewire.service wireplumber.service
+Wants=pipewire.service wireplumber.service
 
 [Service]
 Type=simple
@@ -12,4 +12,3 @@ Environment=RUST_LOG=impulse_voice_daemon=info
 
 [Install]
 WantedBy=default.target
-

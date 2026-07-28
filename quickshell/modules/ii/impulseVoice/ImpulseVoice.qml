@@ -111,6 +111,18 @@ Scope {
     }
 
     GlobalShortcut {
+        name: "impulseVoiceStart"
+        description: "Démarre l'enregistrement Impulse Voice"
+        onPressed: ImpulseVoiceService.start()
+    }
+
+    GlobalShortcut {
+        name: "impulseVoiceStop"
+        description: "Arrête et transcrit l'enregistrement Impulse Voice"
+        onPressed: ImpulseVoiceService.stop()
+    }
+
+    GlobalShortcut {
         name: "impulseVoiceToggle"
         description: "Démarre ou arrête Impulse Voice"
         onPressed: ImpulseVoiceService.toggle()
@@ -118,7 +130,7 @@ Scope {
 
     GlobalShortcut {
         name: "impulseVoiceCancel"
-        description: "Annule la transcription Impulse Voice"
+        description: "Annule l'enregistrement Impulse Voice"
         onPressed: ImpulseVoiceService.cancel()
     }
 }
