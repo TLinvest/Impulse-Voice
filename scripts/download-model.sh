@@ -23,25 +23,25 @@ model_is_complete() {
 }
 
 if model_is_complete; then
-  echo "Parakeet V3 INT8 est déjà installé dans $MODEL_DIR"
+  echo "Parakeet V3 INT8 is already installed at $MODEL_DIR"
   exit 0
 fi
 
 if [[ -e "$MODEL_DIR" ]]; then
-  echo "Le dossier modèle existe mais il est incomplet : $MODEL_DIR" >&2
-  echo "Déplace-le ou supprime-le explicitement avant de relancer le téléchargement." >&2
+  echo "The model directory exists but is incomplete: $MODEL_DIR" >&2
+  echo "Move or remove it explicitly before retrying the download." >&2
   exit 1
 fi
 
 for command in curl sha256sum tar find mktemp; do
   command -v "$command" >/dev/null 2>&1 || {
-    echo "Commande requise introuvable : $command" >&2
+    echo "Required command not found: $command" >&2
     exit 1
   }
 done
 
 mkdir -p "$MODEL_ROOT"
-echo "Téléchargement de Parakeet V3 INT8 (~478 Mo)…"
+echo "Downloading Parakeet V3 INT8 (~478 MB)…"
 curl \
   --fail \
   --location \
@@ -61,14 +61,14 @@ trap cleanup EXIT
 tar -xzf "$ARCHIVE" -C "$extract_dir"
 encoder_path="$(find "$extract_dir" -type f -name 'encoder-model.int8.onnx' -print -quit)"
 if [[ -z "$encoder_path" ]]; then
-  echo "Archive invalide : encoder-model.int8.onnx est absent." >&2
+  echo "Invalid archive: encoder-model.int8.onnx is missing." >&2
   exit 1
 fi
 
 source_dir="$(dirname "$encoder_path")"
 for file in "${REQUIRED_FILES[@]}"; do
   [[ -f "$source_dir/$file" ]] || {
-    echo "Archive invalide : $file est absent." >&2
+    echo "Invalid archive: $file is missing." >&2
     exit 1
   }
 done
@@ -78,4 +78,4 @@ cp -a "$source_dir/." "$MODEL_DIR/"
 find "$MODEL_DIR" -type f -name '._*' -delete
 rm -f -- "$ARCHIVE"
 
-echo "Parakeet V3 INT8 installé dans $MODEL_DIR"
+echo "Parakeet V3 INT8 installed at $MODEL_DIR"

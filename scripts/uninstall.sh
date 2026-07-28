@@ -39,4 +39,4 @@ systemctl --user daemon-reload
 command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null || true
 [[ -f "$QS_ROOT/shell.qml" ]] && touch "$QS_ROOT/shell.qml"
 
-echo "Impulse Voice a été désinstallé. Le modèle local a été conservé."
+echo "Impulse Voice was uninstalled. The local model was retained."

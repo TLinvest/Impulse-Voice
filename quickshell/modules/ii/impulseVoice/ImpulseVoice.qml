@@ -23,9 +23,9 @@ Scope {
         if (ImpulseVoiceService.errorMessage !== "")
             return ImpulseVoiceService.errorMessage;
         if (ImpulseVoiceService.state === "listening")
-            return "Écoute…";
+            return "Listening…";
         if (ImpulseVoiceService.state === "processing")
-            return "Transcription locale…";
+            return "Transcribing locally…";
         return "Impulse Voice";
     }
 
@@ -112,20 +112,20 @@ Scope {
 
     GlobalShortcut {
         name: "impulseVoiceHold"
-        description: "Maintenir pour dicter avec Impulse Voice"
+        description: "Hold to dictate with Impulse Voice"
         onPressed: ImpulseVoiceService.start()
         onReleased: ImpulseVoiceService.stop()
     }
 
     GlobalShortcut {
         name: "impulseVoiceToggle"
-        description: "Démarre ou arrête Impulse Voice"
+        description: "Start or stop Impulse Voice"
         onPressed: ImpulseVoiceService.toggle()
     }
 
     GlobalShortcut {
         name: "impulseVoiceCancel"
-        description: "Annule l'enregistrement Impulse Voice"
+        description: "Cancel the Impulse Voice recording"
         onPressed: ImpulseVoiceService.cancel()
     }
 }

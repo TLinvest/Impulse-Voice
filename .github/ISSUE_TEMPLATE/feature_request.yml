@@ -1,0 +1,37 @@
+name: Feature request
+description: Propose a focused improvement
+title: "feat: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem would this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Project principles
+      options:
+        - label: This can preserve fully local transcription.
+          required: true
+        - label: This can preserve explicit microphone activation.
+          required: true
+        - label: This fits or cleanly extends the Illogical Impulse integration.
+          required: true

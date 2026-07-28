@@ -47,11 +47,11 @@ impl Transcriber {
         let mut model_guard = self
             .model
             .lock()
-            .map_err(|_| anyhow::anyhow!("le moteur Parakeet est indisponible"))?;
+            .map_err(|_| anyhow::anyhow!("the Parakeet engine is unavailable"))?;
         if model_guard.is_none() {
             tracing::info!(path = %self.model_path.display(), "loading Parakeet V3 INT8");
             let model = ParakeetModel::load(&self.model_path, &Quantization::Int8)
-                .context("échec du chargement de Parakeet V3 INT8")?;
+                .context("failed to load Parakeet V3 INT8")?;
             *model_guard = Some(model);
             tracing::info!("Parakeet V3 INT8 loaded");
         }
@@ -59,16 +59,16 @@ impl Transcriber {
     }
 
     pub fn transcribe(&self, samples: Vec<f32>) -> Result<String> {
-        let audio = trim_silence(&samples).context("aucune parole détectée")?;
+        let audio = trim_silence(&samples).context("no speech was detected")?;
         if audio.len() < MIN_AUDIO_SAMPLES {
-            bail!("enregistrement trop court");
+            bail!("the recording is too short");
         }
 
         self.warmup()?;
         let mut model_guard = self
             .model
             .lock()
-            .map_err(|_| anyhow::anyhow!("le moteur Parakeet est indisponible"))?;
+            .map_err(|_| anyhow::anyhow!("the Parakeet engine is unavailable"))?;
         let params = ParakeetParams {
             timestamp_granularity: Some(TimestampGranularity::Segment),
             ..Default::default()
@@ -77,17 +77,17 @@ impl Transcriber {
             .as_mut()
             .expect("model initialized above")
             .transcribe_with(audio, &params)
-            .context("échec de la transcription Parakeet")?;
+            .context("Parakeet transcription failed")?;
         let text = normalize_transcript(&result.text);
         if text.is_empty() {
-            bail!("Parakeet n'a produit aucun texte");
+            bail!("Parakeet produced no text");
         }
         Ok(text)
     }
 
     pub fn transcribe_wav(&self, path: &Path) -> Result<String> {
         let samples = transcribe_rs::audio::read_wav_samples(path)
-            .with_context(|| format!("lecture WAV impossible: {}", path.display()))?;
+            .with_context(|| format!("failed to read WAV file: {}", path.display()))?;
         self.transcribe(samples)
     }
 }
@@ -106,7 +106,7 @@ pub fn validate_model_directory(path: &Path) -> Result<()> {
         .collect();
     if !missing.is_empty() {
         bail!(
-            "modèle Parakeet incomplet dans {} (fichiers manquants: {})",
+            "incomplete Parakeet model at {} (missing files: {})",
             path.display(),
             missing.join(", ")
         );

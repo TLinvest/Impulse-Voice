@@ -3,7 +3,12 @@ name = "impulse-voice-daemon"
 version = "0.2.0"
 edition = "2021"
 license = "MIT"
-description = "Local speech-to-text daemon for the Impulse Voice Quickshell component"
+description = "Private, local voice dictation integrated directly into Illogical Impulse"
+readme = "README.md"
+repository = "https://github.com/TLinvest/Impulse-Voice"
+homepage = "https://github.com/TLinvest/Impulse-Voice"
+keywords = ["speech-to-text", "wayland", "hyprland", "quickshell", "parakeet"]
+categories = ["multimedia::audio", "accessibility"]
 
 [dependencies]
 anyhow = "1.0"

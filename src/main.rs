@@ -164,7 +164,7 @@ async fn start_recording(
 ) -> Result<()> {
     let mut state = app.state.lock().await;
     if !matches!(*state, VoiceState::Idle) {
-        return send_error(writer, "busy", "Impulse Voice est occupé", id, *state).await;
+        return send_error(writer, "busy", "Impulse Voice is busy", id, *state).await;
     }
 
     let start_result = {
@@ -202,7 +202,7 @@ async fn stop_and_transcribe(
             return send_error(
                 writer,
                 "not_recording",
-                "aucun enregistrement en cours",
+                "no recording is in progress",
                 id,
                 *state,
             )
@@ -382,7 +382,7 @@ async fn handle_client(stream: UnixStream, app: Arc<App>) -> Result<()> {
                 send_error(
                     &mut writer,
                     "unknown_command",
-                    format!("commande inconnue: {command}"),
+                    format!("unknown command: {command}"),
                     request.id,
                     *app.state.lock().await,
                 )
@@ -453,7 +453,7 @@ async fn main() -> Result<()> {
     }
     if args.warmup {
         Transcriber::new(model_path).warmup()?;
-        println!("Parakeet V3 INT8 chargé avec succès.");
+        println!("Parakeet V3 INT8 loaded successfully.");
         return Ok(());
     }
     if let Some(wav_path) = args.transcribe_wav {

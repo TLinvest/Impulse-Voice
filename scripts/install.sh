@@ -14,12 +14,12 @@ for argument in "$@"; do
       cat <<'EOF'
 Usage: ./scripts/install.sh [--no-model] [--no-quickshell] [--no-start]
 
-Compile et installe Impulse Voice pour l'utilisateur courant.
+Build and install Impulse Voice for the current user.
 EOF
       exit 0
       ;;
     *)
-      echo "Option inconnue : $argument" >&2
+      echo "Unknown option: $argument" >&2
       exit 2
       ;;
   esac
@@ -35,7 +35,7 @@ hyprland_changed=false
 
 for command in cargo install systemctl python3; do
   command -v "$command" >/dev/null 2>&1 || {
-    echo "Commande requise introuvable : $command" >&2
+    echo "Required command not found: $command" >&2
     exit 1
   }
 done
@@ -44,7 +44,7 @@ if "$download_model"; then
   "$SCRIPT_DIR/download-model.sh"
 fi
 
-echo "Compilation release…"
+echo "Building release binary…"
 cargo build --release --manifest-path "$REPO_ROOT/Cargo.toml"
 install -Dm755 \
   "$REPO_ROOT/target/release/impulse-voice-daemon" \
@@ -55,11 +55,11 @@ install -Dm644 \
 
 if "$integrate_quickshell"; then
   [[ -d "$QS_ROOT" ]] || {
-    echo "Configuration Illogical Impulse introuvable : $QS_ROOT" >&2
+    echo "Illogical Impulse configuration not found: $QS_ROOT" >&2
     exit 1
   }
   [[ -f "$FAMILY_FILE" ]] || {
-    echo "Panel family introuvable : $FAMILY_FILE" >&2
+    echo "Illogical Impulse panel family not found: $FAMILY_FILE" >&2
     exit 1
   }
 
@@ -92,14 +92,14 @@ import_line = "import qs.modules.ii.impulseVoice"
 if import_line not in content:
     anchor = "import qs.modules.ii.wallpaperSelector"
     if anchor not in content:
-        raise SystemExit(f"Point d'import introuvable dans {path}")
+        raise SystemExit(f"Import anchor not found in {path}")
     content = content.replace(anchor, f"{anchor}\n{import_line}", 1)
 
 loader_line = "    PanelLoader { component: ImpulseVoice {} }"
 if loader_line not in content:
     anchor = "    PanelLoader { component: WallpaperSelector {} }"
     if anchor not in content:
-        raise SystemExit(f"Point de chargement introuvable dans {path}")
+        raise SystemExit(f"Panel loader anchor not found in {path}")
     content = content.replace(anchor, f"{anchor}\n{loader_line}", 1)
 
 if content != original:
@@ -128,7 +128,7 @@ original = content
 begin = "# BEGIN IMPULSE VOICE"
 end = "# END IMPULSE VOICE"
 block = """# BEGIN IMPULSE VOICE
-# Maintenir Super+Alt+V pour dicter, relâcher pour transcrire et coller.
+# Hold Super+Alt+V to dictate, then release to transcribe and insert.
 bindd = Super+Alt, V, Hold Impulse Voice dictation, global, quickshell:impulseVoiceHold
 bindd = Super+Alt+Shift, V, Toggle Impulse Voice, global, quickshell:impulseVoiceToggle
 bindd = Super+Alt, Escape, Cancel Impulse Voice, global, quickshell:impulseVoiceCancel
@@ -138,7 +138,7 @@ if begin in content:
     start = content.index(begin)
     finish = content.find(end, start)
     if finish < 0:
-        raise SystemExit(f"Bloc Impulse Voice incomplet dans {path}")
+        raise SystemExit(f"Incomplete Impulse Voice block in {path}")
     finish += len(end)
     content = content[:start] + block + content[finish:]
 else:
@@ -177,5 +177,5 @@ fi
 echo
 "$HOME/.local/bin/impulse-voice-daemon" --doctor
 echo
-echo "Installation terminée."
-echo "Maintiens Super+Alt+V, parle, puis relâche pour transcrire."
+echo "Installation complete."
+echo "Hold Super+Alt+V, speak, then release to transcribe."
