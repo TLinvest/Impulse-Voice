@@ -8,7 +8,7 @@ delimited JSON over a user-only Unix socket.
 Hyprland global shortcut
           │
           ▼
-Illogical Impulse capsule ◄──── NDJSON / Unix socket ────► Rust daemon
+Illogical Impulse waveform ◄─── NDJSON / Unix socket ────► Rust daemon
                                                                │
                                                         CPAL microphone
                                                                │
@@ -52,9 +52,12 @@ It also owns a clearly marked block in
 that managed block. The original panel-family file is backed up before its
 first modification.
 
-The capsule is a non-focusable overlay with a zero exclusion zone. The
-application that owned keyboard focus before dictation keeps it throughout the
-recording and processing states.
+The waveform is a non-focusable overlay with a zero exclusion zone. It appears
+directly below the desktop bar and contains no text, timer, or microphone icon.
+Its eleven center-aligned bars react to the daemon's normalized RMS meter while
+listening, then use state-specific animations while processing, completing, or
+reporting an error. The application that owned keyboard focus before dictation
+keeps it throughout the recording and processing states.
 
 ## Audio path
 
@@ -62,7 +65,8 @@ CPAL opens the selected ALSA input exposed by PipeWire. The callback:
 
 1. converts the native sample format to `f32`;
 2. averages multichannel frames into mono;
-3. appends frames to a bounded in-memory buffer.
+3. updates a smoothed, normalized RMS meter for the Quickshell waveform;
+4. appends frames to a bounded in-memory buffer.
 
 On stop, Rubato converts the native sample rate to 16 kHz. A lightweight RMS
 gate removes quiet leading and trailing windows while retaining padding around

@@ -25,6 +25,7 @@ pub struct InputDeviceInfo {
 struct CaptureBuffer {
     samples: Vec<f32>,
     overflowed: bool,
+    level: f32,
 }
 
 struct ActiveRecording {
@@ -70,6 +71,7 @@ impl AudioRecorder {
         let buffer = Arc::new(Mutex::new(CaptureBuffer {
             samples: Vec::with_capacity(sample_rate as usize * 30),
             overflowed: false,
+            level: 0.0,
         }));
 
         let stream = match config.sample_format() {
@@ -156,6 +158,13 @@ impl AudioRecorder {
     pub fn cancel(&mut self) {
         self.active.take();
     }
+
+    pub fn level(&self) -> f32 {
+        self.active
+            .as_ref()
+            .and_then(|active| active.buffer.lock().ok().map(|capture| capture.level))
+            .unwrap_or(0.0)
+    }
 }
 
 fn select_input_device(host: &cpal::Host, preferred_name: Option<&str>) -> Result<Device> {
@@ -212,25 +221,48 @@ where
                 }
 
                 if channels == 1 {
-                    capture
-                        .samples
-                        .extend(data.iter().map(|&sample| sample.to_sample::<f32>()));
+                    let mut sum_squares = 0.0;
+                    for &sample in data {
+                        let mono = sample.to_sample::<f32>();
+                        sum_squares += mono * mono;
+                        capture.samples.push(mono);
+                    }
+                    update_level(&mut capture, sum_squares, frames);
                 } else {
                     capture.samples.reserve(frames);
+                    let mut sum_squares = 0.0;
                     for frame in data.chunks_exact(channels) {
                         let mono = frame
                             .iter()
                             .map(|&sample| sample.to_sample::<f32>())
                             .sum::<f32>()
                             / channels as f32;
+                        sum_squares += mono * mono;
                         capture.samples.push(mono);
                     }
+                    update_level(&mut capture, sum_squares, frames);
                 }
             },
             |error| tracing::error!(%error, "microphone stream error"),
             None,
         )
         .context("failed to create the microphone stream")
+}
+
+fn update_level(capture: &mut CaptureBuffer, sum_squares: f32, sample_count: usize) {
+    if sample_count == 0 {
+        return;
+    }
+
+    let rms = (sum_squares / sample_count as f32).sqrt();
+    let decibels = 20.0 * rms.max(0.000_001).log10();
+    let normalized = ((decibels + 55.0) / 47.0).clamp(0.0, 1.0);
+    let smoothing = if normalized > capture.level {
+        0.6
+    } else {
+        0.18
+    };
+    capture.level += (normalized - capture.level) * smoothing;
 }
 
 fn resample_to_16khz(input: &[f32], input_rate: u32) -> Result<Vec<f32>> {
@@ -322,5 +354,16 @@ mod tests {
         let input = vec![0.0; 48_000];
         let output = resample_to_16khz(&input, 48_000).unwrap();
         assert_eq!(output.len(), 16_000);
+    }
+
+    #[test]
+    fn meter_is_silent_for_silence_and_reacts_to_voice_level_audio() {
+        let mut capture = CaptureBuffer::default();
+        update_level(&mut capture, 0.0, 480);
+        assert_eq!(capture.level, 0.0);
+
+        update_level(&mut capture, 0.01 * 480.0, 480);
+        assert!(capture.level > 0.4);
+        assert!(capture.level <= 1.0);
     }
 }

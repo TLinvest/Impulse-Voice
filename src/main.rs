@@ -333,6 +333,22 @@ async fn handle_client(stream: UnixStream, app: Arc<App>) -> Result<()> {
                 )
                 .await?;
             }
+            "meter" => {
+                let level = {
+                    let recorder = app.recorder.lock().expect("recorder mutex");
+                    recorder.level()
+                };
+                write_message(
+                    &mut writer,
+                    &json!({
+                        "type": "meter",
+                        "state": *app.state.lock().await,
+                        "level": level,
+                        "id": request.id,
+                    }),
+                )
+                .await?;
+            }
             "start" => start_recording(&app, &mut writer, request.id).await?,
             "stop" => {
                 stop_and_transcribe(Arc::clone(&app), &mut writer, request.id, request.paste)

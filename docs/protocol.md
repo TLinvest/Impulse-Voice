@@ -31,17 +31,19 @@ after connection.
 ```json
 {"id":1,"command":"ping"}
 {"id":2,"command":"status"}
-{"id":3,"command":"start"}
-{"id":4,"command":"stop"}
-{"id":5,"command":"stop","paste":false}
-{"id":6,"command":"toggle"}
-{"id":7,"command":"cancel"}
+{"id":3,"command":"meter"}
+{"id":4,"command":"start"}
+{"id":5,"command":"stop"}
+{"id":6,"command":"stop","paste":false}
+{"id":7,"command":"toggle"}
+{"id":8,"command":"cancel"}
 ```
 
 | Command | Effect |
 | --- | --- |
 | `ping` | Check liveness |
 | `status` | Return state and model information |
+| `meter` | Return the current normalized microphone level |
 | `start` | Open the input stream and begin buffering |
 | `stop` | Stop capture, transcribe, and optionally insert |
 | `toggle` | Start while idle; stop while listening |
@@ -54,6 +56,16 @@ State transition:
 ```json
 {"type":"state","state":"listening","device":"default","id":3}
 ```
+
+Audio meter sample:
+
+```json
+{"type":"meter","state":"listening","level":0.62,"id":4}
+```
+
+`level` is an RMS-derived value normalized to the `0.0`–`1.0` range. Clients
+may poll it while the daemon is listening; the bundled Quickshell component
+uses a 40 ms interval and smooths the resulting bar animation.
 
 Successful transcript:
 

@@ -32,8 +32,10 @@ analytics, or background microphone sessions.
 This is not a floating transcription app placed on top of your desktop. The
 installer adds a real Quickshell module to Illogical Impulse:
 
-- the capsule uses the active Illogical Impulse colors, typography, and
-  rounding;
+- the compact waveform capsule uses the active Illogical Impulse colors,
+  outline, and rounding;
+- its bars react to the local microphone level and switch animation with the
+  recording lifecycle;
 - global shortcuts are registered through Quickshell and Hyprland;
 - the overlay never steals focus from the application receiving the text;
 - recording state travels over a small local Unix socket;
@@ -51,7 +53,8 @@ Super + Alt + V
 
 ## Features
 
-- Native Illogical Impulse QML component and non-focusable status capsule
+- Native Illogical Impulse QML component with an audio-reactive waveform
+- Dedicated listening, processing, success, and error animations
 - Push-to-talk and click-to-toggle dictation modes
 - CPAL capture through the PipeWire/ALSA compatibility layer
 - Multichannel downmixing and 16 kHz resampling with Rubato
