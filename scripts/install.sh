@@ -30,6 +30,8 @@ readonly REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 readonly QS_ROOT="$HOME/.config/quickshell/ii"
 readonly FAMILY_FILE="$QS_ROOT/panelFamilies/IllogicalImpulseFamily.qml"
 readonly CUSTOM_KEYBINDS="$HOME/.config/hypr/custom/keybinds.conf"
+quickshell_changed=false
+hyprland_changed=false
 
 for command in cargo install systemctl python3; do
   command -v "$command" >/dev/null 2>&1 || {
@@ -61,14 +63,24 @@ if "$integrate_quickshell"; then
     exit 1
   }
 
-  install -Dm644 \
+  if ! cmp -s \
     "$REPO_ROOT/quickshell/services/ImpulseVoiceService.qml" \
-    "$QS_ROOT/services/ImpulseVoiceService.qml"
-  install -Dm644 \
+    "$QS_ROOT/services/ImpulseVoiceService.qml"; then
+    install -Dm644 \
+      "$REPO_ROOT/quickshell/services/ImpulseVoiceService.qml" \
+      "$QS_ROOT/services/ImpulseVoiceService.qml"
+    quickshell_changed=true
+  fi
+  if ! cmp -s \
     "$REPO_ROOT/quickshell/modules/ii/impulseVoice/ImpulseVoice.qml" \
-    "$QS_ROOT/modules/ii/impulseVoice/ImpulseVoice.qml"
+    "$QS_ROOT/modules/ii/impulseVoice/ImpulseVoice.qml"; then
+    install -Dm644 \
+      "$REPO_ROOT/quickshell/modules/ii/impulseVoice/ImpulseVoice.qml" \
+      "$QS_ROOT/modules/ii/impulseVoice/ImpulseVoice.qml"
+    quickshell_changed=true
+  fi
 
-  python3 - "$FAMILY_FILE" <<'PY'
+  family_changed="$(python3 - "$FAMILY_FILE" <<'PY'
 from pathlib import Path
 import sys
 
@@ -95,7 +107,14 @@ if content != original:
     if not backup.exists():
         backup.write_text(original)
     path.write_text(content)
+    print("true")
+else:
+    print("false")
 PY
+)"
+  if [[ "$family_changed" == true ]]; then
+    quickshell_changed=true
+  fi
 
   mkdir -p "$(dirname "$CUSTOM_KEYBINDS")"
   touch "$CUSTOM_KEYBINDS"
@@ -110,6 +129,7 @@ bindd = Super+Alt+Shift, V, Toggle Impulse Voice, global, quickshell:impulseVoic
 bindd = Super+Alt, Escape, Cancel Impulse Voice, global, quickshell:impulseVoiceCancel
 # END IMPULSE VOICE
 EOF
+    hyprland_changed=true
   fi
 fi
 
@@ -120,8 +140,15 @@ if "$start_service"; then
 fi
 
 if "$integrate_quickshell"; then
-  command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null || true
-  touch "$QS_ROOT/shell.qml"
+  if "$hyprland_changed" && command -v hyprctl >/dev/null 2>&1; then
+    hyprctl reload >/dev/null || true
+  fi
+  if "$quickshell_changed"; then
+    # Illogical Impulse checks for kded6 on every shell reload. Only reload when
+    # the installed QML actually changed, otherwise its conflict dialog appears
+    # on every harmless reinstall.
+    touch "$QS_ROOT/shell.qml"
+  fi
 fi
 
 echo
