@@ -4,4 +4,12 @@
 *.nemo
 /models/
 .env
-
+.env.*
+!.env.example
+*.part
+*.profraw
+core
+core.*
+.DS_Store
+.direnv/
+result

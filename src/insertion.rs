@@ -53,9 +53,9 @@ fn write_text_clipboard(text: &str) -> Result<()> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
-        .context("wl-copy est introuvable")?;
+        .context("wl-copy was not found")?;
     if !status.success() {
-        bail!("wl-copy a échoué");
+        bail!("wl-copy failed");
     }
     Ok(())
 }
@@ -126,7 +126,7 @@ fn insert_with_keyboard(text: &str, mode: InsertionMode) -> Result<()> {
                 command.args(["-M", "ctrl", "-k", "v", "-m", "ctrl"]);
             }
         }
-        let output = command.output().context("échec de wtype")?;
+        let output = command.output().context("wtype failed")?;
         if output.status.success() {
             return Ok(());
         }
@@ -142,13 +142,13 @@ fn insert_with_keyboard(text: &str, mode: InsertionMode) -> Result<()> {
         let output = Command::new("ydotool")
             .args(keys)
             .output()
-            .context("échec de ydotool")?;
+            .context("ydotool failed")?;
         if output.status.success() {
             return Ok(());
         }
     }
 
-    bail!("aucun outil d'insertion fonctionnel (wtype ou ydotool)")
+    bail!("no working text-insertion tool is available (wtype or ydotool)")
 }
 
 pub fn command_exists(command: &str) -> bool {

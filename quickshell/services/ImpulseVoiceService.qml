@@ -18,7 +18,7 @@ Singleton {
 
     function send(command) {
         if (!voiceSocket.connected) {
-            root.errorMessage = "Le daemon Impulse Voice est hors ligne.";
+            root.errorMessage = "The Impulse Voice daemon is offline.";
             errorTimeout.restart();
             return ;
         }
@@ -50,7 +50,7 @@ Singleton {
         try {
             payload = JSON.parse(line);
         } catch (error) {
-            root.errorMessage = `Réponse invalide: ${error}`;
+            root.errorMessage = `Invalid response: ${error}`;
             errorTimeout.restart();
             return ;
         }
@@ -64,7 +64,7 @@ Singleton {
             root.lastTranscript = payload.text ?? "";
             root.transcriptReady(root.lastTranscript);
         } else if (payload.type === "error") {
-            root.errorMessage = payload.message ?? "Erreur inconnue";
+            root.errorMessage = payload.message ?? "Unknown error";
             errorTimeout.restart();
         }
     }

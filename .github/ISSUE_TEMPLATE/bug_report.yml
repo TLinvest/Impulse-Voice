@@ -1,0 +1,78 @@
+name: Bug report
+description: Report a reproducible Impulse Voice problem
+title: "bug: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Remove private paths, transcripts, and device identifiers from logs.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I ran `impulse-voice-daemon --doctor`.
+          required: true
+        - label: I removed private transcript and device data.
+          required: true
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and what you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Focus ...
+        2. Hold ...
+        3. Release ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Distribution, Hyprland, Quickshell, Illogical Impulse revision, terminal/application, and audio stack.
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostic
+    attributes:
+      label: Diagnostic output
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant service logs
+      description: Paste only the relevant, sanitized lines.
+      render: text
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Audio capture
+        - Transcription/model
+        - Text insertion
+        - Quickshell UI
+        - Installer/uninstaller
+        - IPC/daemon
+        - Other
+    validations:
+      required: true

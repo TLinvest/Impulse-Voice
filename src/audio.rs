@@ -57,7 +57,7 @@ impl AudioRecorder {
 
     pub fn start(&mut self) -> Result<String> {
         if self.active.is_some() {
-            bail!("un enregistrement est déjà en cours");
+            bail!("a recording is already in progress");
         }
 
         let host = cpal::default_host();
@@ -106,9 +106,7 @@ impl AudioRecorder {
             format => bail!("format audio non pris en charge: {format:?}"),
         }?;
 
-        stream
-            .play()
-            .context("impossible de démarrer le microphone")?;
+        stream.play().context("failed to start the microphone")?;
         self.active = Some(ActiveRecording {
             _stream: stream,
             buffer,
@@ -121,10 +119,7 @@ impl AudioRecorder {
     }
 
     pub fn stop(&mut self) -> Result<RecordedAudio> {
-        let active = self
-            .active
-            .take()
-            .context("aucun enregistrement en cours")?;
+        let active = self.active.take().context("no recording is in progress")?;
         let duration = active.started_at.elapsed();
 
         // Dropping the stream stops the callback before we take its buffer.
@@ -139,15 +134,15 @@ impl AudioRecorder {
 
         let mut capture = buffer
             .lock()
-            .map_err(|_| anyhow::anyhow!("le tampon audio est empoisonné"))?;
+            .map_err(|_| anyhow::anyhow!("the audio buffer lock is poisoned"))?;
         if capture.overflowed {
-            bail!("l'enregistrement dépasse la limite de cinq minutes");
+            bail!("the recording exceeds the five-minute limit");
         }
         let raw = std::mem::take(&mut capture.samples);
         drop(capture);
 
         if raw.is_empty() {
-            bail!("aucun échantillon reçu du microphone");
+            bail!("no microphone samples were received");
         }
 
         let samples = resample_to_16khz(&raw, sample_rate)?;
@@ -167,23 +162,23 @@ fn select_input_device(host: &cpal::Host, preferred_name: Option<&str>) -> Resul
     if let Some(name) = preferred_name {
         let devices = host
             .input_devices()
-            .context("impossible d'énumérer les microphones")?;
+            .context("failed to enumerate input devices")?;
         for device in devices {
             if device.name().ok().as_deref() == Some(name) {
                 return Ok(device);
             }
         }
-        bail!("microphone configuré introuvable: {name}");
+        bail!("configured input device not found: {name}");
     }
 
     host.default_input_device()
-        .context("aucun microphone par défaut")
+        .context("no default input device is available")
 }
 
 fn preferred_input_config(device: &Device) -> Result<SupportedStreamConfig> {
     device
         .default_input_config()
-        .context("impossible de lire la configuration du microphone")
+        .context("failed to read the input-device configuration")
 }
 
 fn build_stream<T>(
@@ -235,7 +230,7 @@ where
             |error| tracing::error!(%error, "microphone stream error"),
             None,
         )
-        .context("impossible de créer le flux microphone")
+        .context("failed to create the microphone stream")
 }
 
 fn resample_to_16khz(input: &[f32], input_rate: u32) -> Result<Vec<f32>> {
@@ -250,7 +245,7 @@ fn resample_to_16khz(input: &[f32], input_rate: u32) -> Result<Vec<f32>> {
         1,
         1,
     )
-    .context("impossible d'initialiser le resampler")?;
+    .context("failed to initialize the audio resampler")?;
 
     let expected_len =
         ((input.len() as u64 * TARGET_SAMPLE_RATE as u64) / input_rate as u64) as usize;
@@ -262,7 +257,7 @@ fn resample_to_16khz(input: &[f32], input_rate: u32) -> Result<Vec<f32>> {
         padded.resize(RESAMPLER_CHUNK_SIZE, 0.0);
         let block = resampler
             .process(&[padded.as_slice()], None)
-            .context("échec du resampling audio")?;
+            .context("audio resampling failed")?;
         output.extend_from_slice(&block[0]);
     }
 
@@ -273,7 +268,7 @@ fn resample_to_16khz(input: &[f32], input_rate: u32) -> Result<Vec<f32>> {
         }
         let block = resampler
             .process_partial::<Vec<f32>>(None, None)
-            .context("échec du flush du resampler")?;
+            .context("failed to flush the audio resampler")?;
         output.extend_from_slice(&block[0]);
     }
 
@@ -289,7 +284,7 @@ pub fn list_input_devices() -> Result<Vec<InputDeviceInfo>> {
     let default_name = host.default_input_device().and_then(|d| d.name().ok());
     let devices = host
         .input_devices()
-        .context("impossible d'énumérer les microphones")?
+        .context("failed to enumerate input devices")?
         .filter_map(|device| device.name().ok())
         .map(|name| InputDeviceInfo {
             is_default: default_name.as_deref() == Some(name.as_str()),
@@ -303,7 +298,7 @@ pub fn probe_default_input() -> Result<(String, SupportedStreamConfig)> {
     let host = cpal::default_host();
     let device = host
         .default_input_device()
-        .context("aucun microphone par défaut")?;
+        .context("no default input device is available")?;
     let name = device.name().unwrap_or_else(|_| "Microphone".to_string());
     let config = preferred_input_config(&device)?;
     Ok((name, config))

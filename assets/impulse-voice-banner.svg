@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
+  <title id="title">Impulse Voice</title>
+  <desc id="desc">Local voice dictation, integrated with Illogical Impulse</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1020"/>
+      <stop offset="0.55" stop-color="#17142b"/>
+      <stop offset="1" stop-color="#0b1f1d"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="0.5" stop-color="#c084fc"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="320" rx="28" fill="url(#bg)"/>
+  <rect width="1200" height="320" rx="28" fill="url(#grid)"/>
+  <circle cx="1045" cy="40" r="210" fill="#34d399" opacity=".055"/>
+  <circle cx="140" cy="310" r="240" fill="#8b5cf6" opacity=".08"/>
+
+  <g transform="translate(84 78)">
+    <rect x="0" y="0" width="164" height="164" rx="46" fill="#ffffff" fill-opacity=".055" stroke="#ffffff" stroke-opacity=".12"/>
+    <g transform="translate(29 38)" fill="url(#signal)" filter="url(#glow)">
+      <rect x="0" y="36" width="10" height="20" rx="5"/>
+      <rect x="19" y="24" width="10" height="44" rx="5"/>
+      <rect x="38" y="8" width="10" height="76" rx="5"/>
+      <rect x="57" y="0" width="10" height="92" rx="5"/>
+      <rect x="76" y="15" width="10" height="62" rx="5"/>
+      <rect x="95" y="31" width="10" height="30" rx="5"/>
+    </g>
+  </g>
+
+  <g transform="translate(296 91)" font-family="Inter, ui-sans-serif, system-ui, sans-serif">
+    <text x="0" y="62" fill="#f8fafc" font-size="64" font-weight="750" letter-spacing="-2">Impulse Voice</text>
+    <text x="3" y="111" fill="#cbd5e1" font-size="22" font-weight="450" letter-spacing=".4">LOCAL VOICE · NATIVE FLOW</text>
+    <g transform="translate(3 139)">
+      <rect width="315" height="38" rx="19" fill="#ffffff" fill-opacity=".06" stroke="#ffffff" stroke-opacity=".1"/>
+      <circle cx="22" cy="19" r="5" fill="#34d399"/>
+      <text x="38" y="25" fill="#d1fae5" font-size="14" font-weight="600">100% on-device after setup</text>
+    </g>
+  </g>
+
+  <g transform="translate(1005 250)" font-family="ui-monospace, SFMono-Regular, monospace">
+    <text x="0" y="0" text-anchor="end" fill="#94a3b8" font-size="13">for illogical impulse</text>
+    <path d="M12 15H0" stroke="url(#signal)" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

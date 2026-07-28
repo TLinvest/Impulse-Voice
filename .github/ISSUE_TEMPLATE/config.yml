@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Illogical Impulse documentation
+    url: https://ii.clsty.link/en/
+    about: Check upstream desktop installation and troubleshooting documentation.
+  - name: Private security report
+    url: https://github.com/dfoucaul/impulse-voice/security/advisories/new
+    about: Report microphone, transcript, local file, or command-execution vulnerabilities privately.
