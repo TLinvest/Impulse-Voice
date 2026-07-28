@@ -111,15 +111,10 @@ Scope {
     }
 
     GlobalShortcut {
-        name: "impulseVoiceStart"
-        description: "Démarre l'enregistrement Impulse Voice"
+        name: "impulseVoiceHold"
+        description: "Maintenir pour dicter avec Impulse Voice"
         onPressed: ImpulseVoiceService.start()
-    }
-
-    GlobalShortcut {
-        name: "impulseVoiceStop"
-        description: "Arrête et transcrit l'enregistrement Impulse Voice"
-        onPressed: ImpulseVoiceService.stop()
+        onReleased: ImpulseVoiceService.stop()
     }
 
     GlobalShortcut {

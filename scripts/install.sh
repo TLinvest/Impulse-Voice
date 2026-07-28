@@ -118,17 +118,40 @@ PY
 
   mkdir -p "$(dirname "$CUSTOM_KEYBINDS")"
   touch "$CUSTOM_KEYBINDS"
-  if ! grep -q 'BEGIN IMPULSE VOICE' "$CUSTOM_KEYBINDS"; then
-    cat >>"$CUSTOM_KEYBINDS" <<'EOF'
+  keybinds_changed="$(python3 - "$CUSTOM_KEYBINDS" <<'PY'
+from pathlib import Path
+import sys
 
-# BEGIN IMPULSE VOICE
+path = Path(sys.argv[1])
+content = path.read_text()
+original = content
+begin = "# BEGIN IMPULSE VOICE"
+end = "# END IMPULSE VOICE"
+block = """# BEGIN IMPULSE VOICE
 # Maintenir Super+Alt+V pour dicter, relâcher pour transcrire et coller.
-bindd = Super+Alt, V, Start Impulse Voice dictation, global, quickshell:impulseVoiceStart
-bindrd = Super+Alt, V, Stop Impulse Voice dictation, global, quickshell:impulseVoiceStop
+bindd = Super+Alt, V, Hold Impulse Voice dictation, global, quickshell:impulseVoiceHold
 bindd = Super+Alt+Shift, V, Toggle Impulse Voice, global, quickshell:impulseVoiceToggle
 bindd = Super+Alt, Escape, Cancel Impulse Voice, global, quickshell:impulseVoiceCancel
-# END IMPULSE VOICE
-EOF
+# END IMPULSE VOICE"""
+
+if begin in content:
+    start = content.index(begin)
+    finish = content.find(end, start)
+    if finish < 0:
+        raise SystemExit(f"Bloc Impulse Voice incomplet dans {path}")
+    finish += len(end)
+    content = content[:start] + block + content[finish:]
+else:
+    content = content.rstrip() + "\n\n" + block + "\n"
+
+if content != original:
+    path.write_text(content)
+    print("true")
+else:
+    print("false")
+PY
+)"
+  if [[ "$keybinds_changed" == true ]]; then
     hyprland_changed=true
   fi
 fi
