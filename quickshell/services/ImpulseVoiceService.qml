@@ -65,9 +65,15 @@ Singleton {
         if (payload.type === "transcript") {
             root.lastTranscript = payload.text ?? "";
             root.audioLevel = 0;
-            root.visualState = "success";
             root.transcriptReady(root.lastTranscript);
-            successTimeout.restart();
+            if (payload.paste_error) {
+                root.visualState = "error";
+                root.errorMessage = payload.paste_error;
+                errorTimeout.restart();
+            } else {
+                root.visualState = "success";
+                successTimeout.restart();
+            }
         } else if (payload.type === "error") {
             root.audioLevel = 0;
             root.visualState = "error";

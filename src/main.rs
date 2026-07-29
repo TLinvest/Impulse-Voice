@@ -266,6 +266,9 @@ async fn stop_and_transcribe(
     } else {
         None
     };
+    if let Some(error) = &paste_error {
+        warn!(%error, "transcript insertion failed");
+    }
 
     *app.state.lock().await = VoiceState::Idle;
     write_message(

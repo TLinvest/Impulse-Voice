@@ -128,10 +128,10 @@ original = content
 begin = "# BEGIN IMPULSE VOICE"
 end = "# END IMPULSE VOICE"
 block = """# BEGIN IMPULSE VOICE
-# Hold Super+Alt+V to dictate, then release to transcribe and insert.
-bindd = Super+Alt, V, Hold Impulse Voice dictation, global, quickshell:impulseVoiceHold
-bindd = Super+Alt+Shift, V, Toggle Impulse Voice, global, quickshell:impulseVoiceToggle
-bindd = Super+Alt, Escape, Cancel Impulse Voice, global, quickshell:impulseVoiceCancel
+# Hold Super+R to dictate, then release to transcribe and insert.
+bindd = Super, R, Hold Impulse Voice dictation, global, quickshell:impulseVoiceHold
+bindd = Super+Alt, V, Toggle Impulse Voice, global, quickshell:impulseVoiceToggle
+bindd = Super, Escape, Cancel Impulse Voice, global, quickshell:impulseVoiceCancel
 # END IMPULSE VOICE"""
 
 if begin in content:
@@ -178,4 +178,4 @@ echo
 "$HOME/.local/bin/impulse-voice-daemon" --doctor
 echo
 echo "Installation complete."
-echo "Hold Super+Alt+V, speak, then release to transcribe."
+echo "Hold Super+R, speak, then release to transcribe."

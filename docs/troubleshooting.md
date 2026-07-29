@@ -105,6 +105,11 @@ hyprctl activewindow -j | jq -r '.class, .initialClass'
 Open an issue if your terminal is not detected. Include both class values and
 the terminal name, but do not include private transcript text.
 
+If transcription works after installation but insertion stops after a reboot,
+make sure the installed daemon is current. Impulse Voice discovers the active
+Wayland and Hyprland sockets when the user service starts before the compositor
+has imported its session environment.
+
 ## `kded6` conflict dialog after installation
 
 The dialog belongs to Illogical Impulse's conflict checker and can appear when

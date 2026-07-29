@@ -139,9 +139,9 @@ Installer options:
 
 | Shortcut | Action |
 | --- | --- |
-| Hold `Super+Alt+V` | Record while held; transcribe and insert on release |
-| `Super+Alt+Shift+V` | Start/stop toggle mode |
-| `Super+Alt+Escape` | Cancel the current recording |
+| Hold `Super+R` | Record while held; transcribe and insert on release |
+| `Super+Alt+V` | Start/stop toggle mode |
+| `Super+Escape` | Cancel the current recording |
 
 The first transcription loads Parakeet into memory and is slower. Later
 transcriptions reuse the warm model.
