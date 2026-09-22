@@ -63,17 +63,17 @@ Run the downloader again:
 ./scripts/download-model.sh
 ```
 
-If an interrupted extraction left an incomplete model directory, move that
+If an interrupted download left an incomplete model directory, move that
 directory aside before retrying. The downloader never deletes an existing
 model directory automatically.
 
 Expected files:
 
 ```text
-encoder-model.int8.onnx
-decoder_joint-model.int8.onnx
-nemo128.onnx
-vocab.txt
+model.safetensors
+config.json
+ternary.json
+tokenizer.json
 ```
 
 ## Shortcut does nothing
@@ -121,13 +121,19 @@ reinstalls should not repeatedly open the dialog.
 
 ## First transcription is slow
 
-Parakeet is loaded lazily. Preload it after login or installation:
+Parakeet is loaded lazily. Validate loading in a separate process:
 
 ```bash
 impulse-voice-daemon --warmup
 ```
 
-Once loaded, the model remains in the daemon until the service restarts.
+`--warmup` validates the model and exits; it does not warm the running service.
+After a dictation, the daemon keeps Photon warm for ten minutes of inactivity.
+
+If Photon cannot start, run `./scripts/install-runtime.sh` and check the service
+logs. The default interpreter is
+`~/.local/share/impulse-voice/photon-venv/bin/python`;
+`IMPULSE_VOICE_PYTHON` can override it. No API key is required.
 
 ## Collecting a useful bug report
 

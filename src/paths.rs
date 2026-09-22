@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::{Context, Result};
 
-pub const MODEL_DIRECTORY_NAME: &str = "parakeet-tdt-0.6b-v3-int8";
+pub const MODEL_DIRECTORY_NAME: &str = "parakeet-redux";
 
 pub fn data_home() -> Result<PathBuf> {
     if let Some(path) = env::var_os("XDG_DATA_HOME") {

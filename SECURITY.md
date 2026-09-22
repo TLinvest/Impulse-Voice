@@ -34,8 +34,8 @@ Impulse Voice:
 - has no TCP listener, web server, analytics, or cloud API;
 - writes only to documented user configuration and install paths.
 
-The installer downloads a pinned model archive over HTTPS and verifies its
-SHA-256 checksum. The repository does not redistribute model weights.
+The installer downloads a pinned model revision over HTTPS and verifies its
+weights’ SHA-256 checksum. The repository does not redistribute model weights.
 
 ## Out of scope
 

@@ -8,6 +8,17 @@ integration changes.
 
 ## [Unreleased]
 
+### Added
+
+- Automatic Parakeet model unload after 10 minutes of inactivity
+
+## 0.3.0 — Parakeet Redux
+
+- Replace ONNX inference with an offline persistent Photon CPU worker.
+- Install pinned Moondream Redux weights and an isolated CPU Python runtime.
+- Preserve idle unloading, in-memory audio, desktop shortcuts and overlay.
+- Document the French accuracy tradeoff and retained legacy model files.
+
 ## [0.2.0] - 2026-07-28
 
 ### Added

@@ -1,81 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-readonly MODEL_URL="https://blob.handy.computer/parakeet-v3-int8.tar.gz"
-readonly MODEL_SHA256="43d37191602727524a7d8c6da0eef11c4ba24320f5b4730f1a2497befc2efa77"
-readonly MODEL_NAME="parakeet-tdt-0.6b-v3-int8"
+readonly REVISION=ab9eb5ef7b81f98211b3feb68e5a856cab71f913
+readonly WEIGHTS_SHA256=78ec25733ee0d0c1586d1346fc86db9d0c2e436e3a8ab1d32a82d1bb8f848d21
 readonly DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 readonly MODEL_ROOT="${IMPULSE_VOICE_MODEL_ROOT:-$DATA_HOME/impulse-voice/models}"
-readonly MODEL_DIR="$MODEL_ROOT/$MODEL_NAME"
-readonly ARCHIVE="$MODEL_ROOT/$MODEL_NAME.tar.gz.part"
-readonly REQUIRED_FILES=(
-  "encoder-model.int8.onnx"
-  "decoder_joint-model.int8.onnx"
-  "nemo128.onnx"
-  "vocab.txt"
-)
-
-model_is_complete() {
-  local file
-  for file in "${REQUIRED_FILES[@]}"; do
-    [[ -f "$MODEL_DIR/$file" ]] || return 1
-  done
-}
-
-if model_is_complete; then
-  echo "Parakeet V3 INT8 is already installed at $MODEL_DIR"
-  exit 0
+readonly MODEL_DIR="$MODEL_ROOT/parakeet-redux"
+readonly FILES=(model.safetensors config.json tokenizer.json ternary.json README.md)
+if [[ -f "$MODEL_DIR/.revision" ]] && [[ "$(cat "$MODEL_DIR/.revision")" == "$REVISION" ]]; then
+  complete=true
+  for file in "${FILES[@]}"; do [[ -s "$MODEL_DIR/$file" ]] || complete=false; done
+  if "$complete" && echo "$WEIGHTS_SHA256  $MODEL_DIR/model.safetensors" | sha256sum --check --status; then
+    echo "Parakeet Redux is already installed at $MODEL_DIR"
+    exit 0
+  fi
 fi
-
-if [[ -e "$MODEL_DIR" ]]; then
-  echo "The model directory exists but is incomplete: $MODEL_DIR" >&2
-  echo "Move or remove it explicitly before retrying the download." >&2
-  exit 1
-fi
-
-for command in curl sha256sum tar find mktemp; do
-  command -v "$command" >/dev/null 2>&1 || {
-    echo "Required command not found: $command" >&2
-    exit 1
-  }
-done
-
+[[ ! -e "$MODEL_DIR" ]] || { echo "Incomplete or different model at $MODEL_DIR; move it before retrying." >&2; exit 1; }
 mkdir -p "$MODEL_ROOT"
-echo "Downloading Parakeet V3 INT8 (~478 MB)…"
-curl \
-  --fail \
-  --location \
-  --retry 3 \
-  --continue-at - \
-  --output "$ARCHIVE" \
-  "$MODEL_URL"
-
-echo "$MODEL_SHA256  $ARCHIVE" | sha256sum --check -
-
-extract_dir="$(mktemp -d "$MODEL_ROOT/.parakeet-extract.XXXXXX")"
-cleanup() {
-  rm -rf -- "$extract_dir"
-}
-trap cleanup EXIT
-
-tar -xzf "$ARCHIVE" -C "$extract_dir"
-encoder_path="$(find "$extract_dir" -type f -name 'encoder-model.int8.onnx' -print -quit)"
-if [[ -z "$encoder_path" ]]; then
-  echo "Invalid archive: encoder-model.int8.onnx is missing." >&2
-  exit 1
-fi
-
-source_dir="$(dirname "$encoder_path")"
-for file in "${REQUIRED_FILES[@]}"; do
-  [[ -f "$source_dir/$file" ]] || {
-    echo "Invalid archive: $file is missing." >&2
-    exit 1
-  }
+staging="$(mktemp -d "$MODEL_ROOT/.redux-download.XXXXXX")"
+trap 'rm -rf -- "$staging"' EXIT
+for file in "${FILES[@]}"; do
+  curl --fail --location --retry 3 --output "$staging/$file" \
+    "https://huggingface.co/moondream/parakeet-redux/resolve/$REVISION/$file"
 done
-
-mkdir -p "$MODEL_DIR"
-cp -a "$source_dir/." "$MODEL_DIR/"
-find "$MODEL_DIR" -type f -name '._*' -delete
-rm -f -- "$ARCHIVE"
-
-echo "Parakeet V3 INT8 installed at $MODEL_DIR"
+echo "$WEIGHTS_SHA256  $staging/model.safetensors" | sha256sum --check -
+printf '%s\n' "$REVISION" > "$staging/.revision"
+mv "$staging" "$MODEL_DIR"
+echo "Parakeet Redux installed at $MODEL_DIR"

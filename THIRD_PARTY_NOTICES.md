@@ -10,28 +10,27 @@ a separately downloaded speech-recognition model.
 - License: Creative Commons Attribution 4.0 International (CC BY 4.0)
 - License text: <https://creativecommons.org/licenses/by/4.0/legalcode>
 
-The model is not stored in this repository. The installer downloads an INT8
-ONNX conversion published by Handy and verifies a pinned SHA-256 checksum.
-Model weights remain subject to NVIDIA's model license.
+The model is not stored in this repository. Redux is a compressed derivative
+published by Moondream under CC BY 4.0.
+
+## Moondream Parakeet Redux and Photon
+
+- Model: <https://huggingface.co/moondream/parakeet-redux>
+- Model license: CC BY 4.0
+- Runtime: <https://moondream.ai/photon>
+
+The installer downloads a pinned Redux revision and verifies the weights with
+SHA-256. Photon is installed through `moondream==2.4.0` with CPU PyTorch in an
+isolated environment. Runtime packages and native kernel bundles retain their
+respective upstream licenses; the repository's MIT license does not replace them.
 
 ## Handy
 
 - Project: <https://github.com/cjpais/Handy>
-- Copyright: Handy contributors
 - License: MIT
 
-Handy inspired the local dictation direction and publishes the Parakeet V3 INT8
-archive consumed by the model downloader. Impulse Voice does not use Handy's
-name, logo, or product identity.
-
-## transcribe-rs
-
-- Project: <https://github.com/cjpais/transcribe-rs>
-- Copyright: transcribe-rs contributors
-- License: MIT
-
-`transcribe-rs` provides the Rust API used to load and execute the ONNX
-Parakeet model.
+Handy inspired the original local dictation direction. The Redux backend no
+longer uses Handy's ONNX archive or transcribe-rs.
 
 ## Rust dependencies
 

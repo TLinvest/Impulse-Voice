@@ -16,7 +16,7 @@
 Impulse Voice is a private, push-to-talk dictation component built directly
 into the [Illogical Impulse](https://github.com/end-4/dots-hyprland)
 Quickshell desktop. It captures your microphone through PipeWire, transcribes
-locally with NVIDIA Parakeet TDT 0.6B v3, and inserts the result into the
+locally with Moondream Parakeet Redux (derived from NVIDIA Parakeet v3), and inserts the result into the
 focused application.
 
 After the one-time model download, audio, inference, and text insertion stay
@@ -25,7 +25,7 @@ analytics, or background microphone sessions.
 
 > [!IMPORTANT]
 > Impulse Voice is an independent community project. It is not affiliated with
-> Illogical Impulse, NVIDIA, or Handy.
+> Illogical Impulse, Moondream, NVIDIA, or Handy.
 
 ## Why it feels native
 
@@ -46,7 +46,7 @@ installer adds a real Quickshell module to Illogical Impulse:
 Super + Alt + V
        │ hold
        ▼
- PipeWire microphone ──► mono 16 kHz ──► Parakeet V3 ──► focused app
+ PipeWire microphone ──► mono 16 kHz ──► Parakeet Redux ──► focused app
        ▲                                                        │
        └──────────────────── release to transcribe ─────────────┘
 ```
@@ -58,8 +58,8 @@ Super + Alt + V
 - Push-to-talk and click-to-toggle dictation modes
 - CPAL capture through the PipeWire/ALSA compatibility layer
 - Multichannel downmixing and 16 kHz resampling with Rubato
-- Local Parakeet TDT 0.6B v3 INT8 inference through ONNX Runtime
-- Lazy model loading: the model stays warm after the first transcription
+- Local Parakeet Redux 1.58-bit inference through Photon on CPU
+- Lazy model loading with automatic unload after 10 minutes of inactivity
 - Context-aware Wayland insertion for terminals and regular applications
 - Clipboard restoration after paste
 - Hardware/model diagnostics and WAV transcription commands
@@ -70,13 +70,14 @@ Super + Alt + V
 | Data | Destination | Retained? |
 | --- | --- | --- |
 | Microphone samples | In-memory daemon buffer | No |
-| Speech recognition | Local ONNX Runtime process | No cloud transfer |
+| Speech recognition | Local Photon worker, connected by private pipes | No cloud transfer |
 | Transcript | Focused application | Not stored by Impulse Voice |
-| Model download | Handy-hosted archive, once during setup | Model stays local |
+| Model download | Hugging Face pinned revision, once during setup | Model stays local |
 
-The microphone stream exists only between `start` and `stop`. The model
-archive is the only runtime asset fetched from the internet, and its SHA-256
-is verified before extraction.
+The microphone stream exists only between `start` and `stop`. Setup downloads
+the Python runtime dependencies and a pinned model revision; the weights are
+verified with SHA-256. Inference uses local files with Hugging Face offline mode
+and telemetry disabled. Audio travels in memory over private pipes.
 
 ## Requirements
 
@@ -88,6 +89,7 @@ Impulse Voice currently targets:
 - the `ii` configuration of Illogical Impulse
 - PipeWire with WirePlumber
 - a Rust toolchain
+- [uv](https://docs.astral.sh/uv/) (installs an isolated Python 3.12 environment)
 
 Install the system dependencies:
 
@@ -112,8 +114,8 @@ cd impulse-voice
 
 The installer:
 
-1. downloads the Parakeet V3 INT8 archive (about 478 MB);
-2. verifies its pinned SHA-256 checksum;
+1. installs Photon 2.4.0 and CPU PyTorch in a dedicated environment;
+2. downloads Parakeet Redux (~178 MB of weights) and verifies its pinned SHA-256;
 3. builds and installs the Rust daemon;
 4. creates and enables the user systemd service;
 5. installs the Quickshell service and capsule;
@@ -197,7 +199,7 @@ text-insertion issues.
 
 ```text
 ~/.local/bin/impulse-voice-daemon
-~/.local/share/impulse-voice/models/parakeet-tdt-0.6b-v3-int8/
+~/.local/share/impulse-voice/models/parakeet-redux/
 ~/.config/systemd/user/impulse-voice.service
 ~/.config/quickshell/ii/services/ImpulseVoiceService.qml
 ~/.config/quickshell/ii/modules/ii/impulseVoice/ImpulseVoice.qml
@@ -207,6 +209,7 @@ Environment variables:
 
 | Variable | Purpose |
 | --- | --- |
+| `IMPULSE_VOICE_PYTHON` | Override the Photon environment Python executable |
 | `IMPULSE_VOICE_MODEL` | Override the complete model directory |
 | `IMPULSE_VOICE_MODEL_ROOT` | Override the model download parent directory |
 | `IMPULSE_VOICE_INPUT_DEVICE` | Select an exact CPAL input-device name |
@@ -240,12 +243,22 @@ and [contribution guide](CONTRIBUTING.md) before making structural changes.
   provides the desktop this component integrates with.
 - [NVIDIA Parakeet TDT 0.6B v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3)
   provides the speech-recognition model and is licensed under CC BY 4.0.
-- [Handy](https://github.com/cjpais/Handy) inspired the local dictation
-  direction and publishes the verified INT8 model archive used by the
-  installer.
-- [transcribe-rs](https://github.com/cjpais/transcribe-rs) provides the Rust
-  ONNX inference integration.
+- [Moondream Parakeet Redux](https://huggingface.co/moondream/parakeet-redux)
+  supplies the compressed CC BY 4.0 weights; Photon supplies the local runtime.
+- [Handy](https://github.com/cjpais/Handy) inspired the local dictation direction.
 
 Impulse Voice source code is available under the [MIT License](LICENSE).
 See [Third-party notices](THIRD_PARTY_NOTICES.md) for model and dependency
 attribution.
+
+## Redux migration
+
+Redux reduces model weight size, but Photon and CPU PyTorch add installation
+space beyond the 178 MB checkpoint. Published French FLEURS WER is 7.71%,
+versus 4.81% for the original v3; compression trades some French accuracy for
+size and CPU performance. Actual dictation speed and accuracy depend on hardware
+and speech. See the [model benchmarks](https://huggingface.co/moondream/parakeet-redux).
+
+Existing v3 model directories are retained during upgrade. `--no-model` now
+requires an existing **Redux** model. The Python environment lives under
+`$XDG_DATA_HOME/impulse-voice/photon-venv` (default `~/.local/share`).

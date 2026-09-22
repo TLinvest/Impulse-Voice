@@ -40,6 +40,8 @@ for command in cargo install systemctl python3; do
   }
 done
 
+"$SCRIPT_DIR/install-runtime.sh"
+
 if "$download_model"; then
   "$SCRIPT_DIR/download-model.sh"
 fi

@@ -8,6 +8,7 @@ use std::{
     os::unix::fs::FileTypeExt,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use anyhow::{bail, Context, Result};
@@ -25,6 +26,9 @@ use tracing::{info, warn};
 use tracing_subscriber::EnvFilter;
 use transcriber::Transcriber;
 
+const MODEL_IDLE_TIMEOUT: Duration = Duration::from_secs(10 * 60);
+const MODEL_CLEANUP_INTERVAL: Duration = Duration::from_secs(30);
+
 #[derive(Debug, Parser)]
 #[command(version, about)]
 struct Args {
@@ -32,7 +36,7 @@ struct Args {
     #[arg(long, env = "IMPULSE_VOICE_SOCKET")]
     socket: Option<PathBuf>,
 
-    /// Override the Parakeet V3 INT8 model directory.
+    /// Override the Parakeet Redux model directory.
     #[arg(long, env = "IMPULSE_VOICE_MODEL")]
     model: Option<PathBuf>,
 
@@ -56,7 +60,7 @@ struct Args {
     #[arg(long, value_name = "PATH")]
     transcribe_wav: Option<PathBuf>,
 
-    /// Load Parakeet into memory to validate the ONNX model, then exit.
+    /// Load Parakeet into memory to validate the Photon model, then exit.
     #[arg(long)]
     warmup: bool,
 
@@ -472,7 +476,7 @@ async fn main() -> Result<()> {
     }
     if args.warmup {
         Transcriber::new(model_path).warmup()?;
-        println!("Parakeet V3 INT8 loaded successfully.");
+        println!("Parakeet Redux loaded successfully.");
         return Ok(());
     }
     if let Some(wav_path) = args.transcribe_wav {
@@ -496,9 +500,33 @@ async fn main() -> Result<()> {
         socket = %socket_path.display(),
         model = %model_path.display(),
         model_ready = app.transcriber.model_ready(),
+        model_idle_timeout_secs = MODEL_IDLE_TIMEOUT.as_secs(),
         paste_enabled = app.paste_enabled,
         "Impulse Voice daemon ready"
     );
+
+    let transcriber = Arc::clone(&app.transcriber);
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(MODEL_CLEANUP_INTERVAL);
+        interval.tick().await;
+        loop {
+            interval.tick().await;
+            let transcriber = Arc::clone(&transcriber);
+            match tokio::task::spawn_blocking(move || {
+                transcriber.unload_if_idle(MODEL_IDLE_TIMEOUT)
+            })
+            .await
+            {
+                Ok(Ok(true)) => info!(
+                    idle_timeout_secs = MODEL_IDLE_TIMEOUT.as_secs(),
+                    "Parakeet Redux unloaded after inactivity"
+                ),
+                Ok(Ok(false)) => {}
+                Ok(Err(error)) => warn!(%error, "failed to check Parakeet idle timeout"),
+                Err(error) => warn!(%error, "Parakeet idle-timeout task failed"),
+            }
+        }
+    });
 
     loop {
         tokio::select! {

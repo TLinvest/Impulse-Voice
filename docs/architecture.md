@@ -16,7 +16,7 @@ Illogical Impulse waveform ◄─── NDJSON / Unix socket ────► Rus
                                                                │
                                                    energy-based silence trim
                                                                │
-                                              Parakeet TDT 0.6B v3 INT8
+                                              Parakeet Redux / Photon CPU
                                                                │
                                                    transcript normalization
                                                                │
@@ -30,10 +30,10 @@ CPAL stream, takes ownership of the sample buffer, resamples it, trims quiet
 edges, and sends the resulting PCM to Parakeet. This prevents a persistent
 microphone indicator while Impulse Voice is idle.
 
-Parakeet is loaded lazily during the first transcription and remains in the
-daemon's memory. Later transcriptions avoid model startup cost. Inference and
-text insertion run on blocking worker threads so the Tokio socket remains
-responsive.
+Parakeet is loaded lazily during the first transcription and remains warm for
+10 minutes after its last use. It is then unloaded automatically to release its
+memory; a later transcription reloads it on demand. Inference and text insertion
+run on blocking worker threads so the Tokio socket remains responsive.
 
 The recorder limits a single capture to five minutes. Impulse Voice is designed
 for push-to-talk dictation rather than meetings or continuous transcription.
@@ -77,16 +77,20 @@ speech.
 The model directory must contain:
 
 ```text
-parakeet-tdt-0.6b-v3-int8/
-├── encoder-model.int8.onnx
-├── decoder_joint-model.int8.onnx
-├── nemo128.onnx
-└── vocab.txt
+parakeet-redux/
+├── model.safetensors
+├── config.json
+├── ternary.json
+└── tokenizer.json
 ```
 
-The downloader fetches the INT8 archive published by Handy and verifies a
-pinned SHA-256 checksum before extraction. Inference is provided by
-`transcribe-rs` and ONNX Runtime.
+The downloader fetches a pinned Hugging Face revision and verifies the weights'
+SHA-256. The Rust daemon starts an embedded Python worker using a dedicated
+Photon environment. Little-endian float32 mono PCM is length-prefixed over a
+private stdin pipe; results are JSON lines over stdout. Runtime diagnostics go
+to stderr. Hugging Face offline mode prevents runtime downloads. The worker
+stays warm until idle unloading, and is terminated and reaped on drop or error.
+The next dictation starts a fresh worker after an inference failure.
 
 The upstream NVIDIA model is licensed under CC BY 4.0. The Impulse Voice source
 code is MIT licensed; the downloaded model remains governed by its own license.
@@ -107,9 +111,9 @@ not retain transcripts.
 
 - The Unix socket lives under `$XDG_RUNTIME_DIR` and inherits the user's runtime
   directory permissions.
-- Audio never leaves the daemon process.
+- Audio stays in memory within the daemon and its local Photon child process.
 - The daemon does not expose TCP, HTTP, telemetry, or update endpoints.
-- The installer performs the only network operation: downloading the model.
+- The installer downloads the model and runtime dependencies; inference is offline.
 - Shell integration is limited to the current user's configuration and
   systemd user manager.
 
