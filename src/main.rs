@@ -36,7 +36,7 @@ struct Args {
     #[arg(long, env = "IMPULSE_VOICE_SOCKET")]
     socket: Option<PathBuf>,
 
-    /// Override the Parakeet Redux model directory.
+    /// Override the Parakeet V3 INT8 model directory.
     #[arg(long, env = "IMPULSE_VOICE_MODEL")]
     model: Option<PathBuf>,
 
@@ -60,7 +60,7 @@ struct Args {
     #[arg(long, value_name = "PATH")]
     transcribe_wav: Option<PathBuf>,
 
-    /// Load Parakeet into memory to validate the Photon model, then exit.
+    /// Load Parakeet into memory to validate the ONNX model, then exit.
     #[arg(long)]
     warmup: bool,
 
@@ -476,7 +476,7 @@ async fn main() -> Result<()> {
     }
     if args.warmup {
         Transcriber::new(model_path).warmup()?;
-        println!("Parakeet Redux loaded successfully.");
+        println!("Parakeet V3 INT8 loaded successfully.");
         return Ok(());
     }
     if let Some(wav_path) = args.transcribe_wav {
@@ -519,7 +519,7 @@ async fn main() -> Result<()> {
             {
                 Ok(Ok(true)) => info!(
                     idle_timeout_secs = MODEL_IDLE_TIMEOUT.as_secs(),
-                    "Parakeet Redux unloaded after inactivity"
+                    "Parakeet V3 INT8 unloaded after inactivity"
                 ),
                 Ok(Ok(false)) => {}
                 Ok(Err(error)) => warn!(%error, "failed to check Parakeet idle timeout"),

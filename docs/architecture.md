@@ -16,7 +16,7 @@ Illogical Impulse waveform ◄─── NDJSON / Unix socket ────► Rus
                                                                │
                                                    energy-based silence trim
                                                                │
-                                              Parakeet Redux / Photon CPU
+                                              Parakeet TDT 0.6B v3 INT8
                                                                │
                                                    transcript normalization
                                                                │
@@ -77,20 +77,16 @@ speech.
 The model directory must contain:
 
 ```text
-parakeet-redux/
-├── model.safetensors
-├── config.json
-├── ternary.json
-└── tokenizer.json
+parakeet-tdt-0.6b-v3-int8/
+├── encoder-model.int8.onnx
+├── decoder_joint-model.int8.onnx
+├── nemo128.onnx
+└── vocab.txt
 ```
 
-The downloader fetches a pinned Hugging Face revision and verifies the weights'
-SHA-256. The Rust daemon starts an embedded Python worker using a dedicated
-Photon environment. Little-endian float32 mono PCM is length-prefixed over a
-private stdin pipe; results are JSON lines over stdout. Runtime diagnostics go
-to stderr. Hugging Face offline mode prevents runtime downloads. The worker
-stays warm until idle unloading, and is terminated and reaped on drop or error.
-The next dictation starts a fresh worker after an inference failure.
+The downloader fetches the INT8 archive published by Handy and verifies a
+pinned SHA-256 checksum before extraction. Inference is provided by
+`transcribe-rs` and ONNX Runtime.
 
 The upstream NVIDIA model is licensed under CC BY 4.0. The Impulse Voice source
 code is MIT licensed; the downloaded model remains governed by its own license.
@@ -111,9 +107,9 @@ not retain transcripts.
 
 - The Unix socket lives under `$XDG_RUNTIME_DIR` and inherits the user's runtime
   directory permissions.
-- Audio stays in memory within the daemon and its local Photon child process.
+- Audio never leaves the daemon process.
 - The daemon does not expose TCP, HTTP, telemetry, or update endpoints.
-- The installer downloads the model and runtime dependencies; inference is offline.
+- The installer performs the only network operation: downloading the model.
 - Shell integration is limited to the current user's configuration and
   systemd user manager.
 
